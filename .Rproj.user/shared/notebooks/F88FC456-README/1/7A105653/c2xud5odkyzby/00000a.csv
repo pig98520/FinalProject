@@ -1,0 +1,26 @@
+"0","X0605_0607 <- read_csv(""C:/Users/pig98/Desktop/FinalProject/0605_0607.csv"", "
+"0","                       col_names = FALSE)"
+"2","Parsed with column specification:
+cols(
+  .default = col_character(),
+  X1 = col_integer(),
+  X7 = col_date(format = """"),
+  X8 = col_time(format = """"),
+  X9 = col_date(format = """"),
+  X10 = col_time(format = """")
+)
+"
+"2","See spec(...) for full column specifications.
+"
+"2","Warning message:
+"
+"2","In strsplit(code, ""\n"", fixed = TRUE) :"
+"2","
+ "
+"2"," input string 1 is invalid in this locale
+"
+"0","#桃園機場的CSV檔單獨讀入"
+"0","temp = list.files(pattern=""*.xls"")"
+"0","for (i in 1:length(temp)) "
+"0","  assign(temp[i], read_excel(temp[i]))"
+"0","#其餘資料用迴圈讀入"

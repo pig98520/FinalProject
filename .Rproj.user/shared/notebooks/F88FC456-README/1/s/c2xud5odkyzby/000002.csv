@@ -1,0 +1,12 @@
+"0","X0605_0607 <- read_csv(""C:/Users/pig98/Desktop/B0688335/0605_0607.csv"", "
+"0","                       col_names = FALSE)"
+"2","Error: could not find function ""read_csv""
+"
+"2","In addition: "
+"2","Warning message:
+"
+"2","In strsplit(code, ""\n"", fixed = TRUE) :"
+"2","
+ "
+"2"," input string 1 is invalid in this locale
+"
