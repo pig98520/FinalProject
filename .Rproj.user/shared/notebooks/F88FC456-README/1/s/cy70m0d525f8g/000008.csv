@@ -1,0 +1,2 @@
+"0","#出境最準時的六大航空公司:加拿大、法國、馬亞洲、阿聯酋、景成、德威"
+"0","tail(depart_delay[order(depart_delay$ratio,decreasing = T),])"

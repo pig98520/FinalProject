@@ -23,4 +23,4 @@ cols(
 "0","temp = list.files(pattern=""*.xls"")"
 "0","for (i in 1:length(temp)) "
 "0","  assign(temp[i], read_excel(temp[i]))"
-"0","#其餘資料用迴圈讀入"
+"0","#其餘excel資料用迴圈讀入"

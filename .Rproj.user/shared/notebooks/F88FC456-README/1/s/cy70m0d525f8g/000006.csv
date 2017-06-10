@@ -1,0 +1,2 @@
+"0","#出境最不準時的六大航空公司:義大利、捷星太平洋、吉祥、濟州、遠東、捷星日本"
+"0","head(depart_delay[order(depart_delay$ratio,decreasing = T),])"

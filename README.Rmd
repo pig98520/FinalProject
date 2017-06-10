@@ -15,20 +15,26 @@ output: html_document
 >CSV檔案
 >http://data.gov.tw/node/26194
 
-2.日本~~~~~~:
+2.台灣歷年到各國旅遊資料:  
 >
 >
 >
->http://www.data.go.jp/
+
+3.日本國內航班資料:  
+>
+>
+>
+>http://www.data.go.jp  
 =================================================================
 
 二、分析議題  
 1.桃園機場各航空公司之航班的延誤比例  
 2.桃園機場往來地點的分布圖  
-3.日本近15年(2000-2015)來旅遊人數的變化  
-4.日本仙台地區近15年(2000-2015)來旅遊人數的變化  
-5.日本福島地區近15年(2000-2015)來旅遊人數的變化  
-6.  
+3.台灣到日本近年來旅遊人數的變化
+4.日本近15年(2000-2015)來國內航班的變化  
+5.日本仙台地區近15年(2000-2015)來國內航班的變化  
+6.日本福島地區近15年(2000-2015)來國內航班的變化  
+  
 
 =================================================================
 
@@ -49,19 +55,19 @@ library(ggplot2)
 ```
 
 ##載入資料
-```{r}
-X0605_0607 <- read_csv("C:/Users/pig98/Desktop/B0688335/0605_0607.csv", 
+```{r }
+X0605_0607 <- read_csv("C:/Users/pig98/Desktop/FinalProject/0605_0607.csv", 
                        col_names = FALSE)
 #桃園機場的CSV檔單獨讀入
 
 temp = list.files(pattern="*.xls")
 for (i in 1:length(temp)) 
   assign(temp[i], read_excel(temp[i]))
-#其餘資料用迴圈讀入
+#其餘excel資料用迴圈讀入
 ```
 
 ##資料清洗
-```{r}
+```{r }
 #去除不需要的欄位以及中文名稱
 X0605_0607<-X0605_0607[,c(-4,-11,-13,-14,-17,-18)] 
 #新增欄位名稱
@@ -71,12 +77,12 @@ colnames(X0605_0607)=c("terminals","species","airline_id","flight","gate",
 #依照航空公司代碼簡單排序資料
 X0605_0607<-X0605_0607[order(X0605_0607$airline_id),]
 
-X0605_0607
+knitr::kable(X0605_0607)
 ```
 
 
 ##資料分析1:哪些航空公司的班機最容易誤點/最準時
-```{r}
+```{r }
 #新增一個欄位判斷班機是否delay
 for(n in 1:nrow(X0605_0607) )
 {
@@ -91,7 +97,7 @@ for(n in 1:nrow(X0605_0607) )
   else if(X0605_0607[n,6]>X0605_0607[n,8])
     X0605_0607$delay[n]="F"
 }
-View(X0605_0607)
+knitr::kable(X0605_0607)
 
 #將資料分成出境跟入境兩個子集
 arrive<-subset(X0605_0607,species=="A");
@@ -105,13 +111,13 @@ depart_delay<-table(airline=depart$airline_id,delay=depart$delay)%>%as.data.fram
 flight_num<-table(airline=X0605_0607$airline_id,species=X0605_0607$species)%>%as.data.frame.matrix()
 flight_num<-flight_num[order(flight_num$A+flight_num$D,decreasing = T),]
 #檢視各航空公司的航班數
-View(flight_num)
+knitr::kable(flight_num)
 
 #計算出各航空公司的delay比例
 arrive_delay$ratio<-arrive_delay$T/(arrive_delay$T+arrive_delay$F)
 depart_delay$ratio<-depart_delay$T/(depart_delay$T+depart_delay$F)
-View(arrive_delay)
-View(depart_delay)
+knitr::kable(arrive_delay)
+knitr::kable(depart_delay)
 
 #入境最不準時的六大航空公司:捷星太平洋、遠東航空、四川、全亞洲、德威、濟州
 head(arrive_delay[order(arrive_delay$ratio,decreasing = T),])
@@ -124,7 +130,7 @@ tail(depart_delay[order(depart_delay$ratio,decreasing = T),])
 ```
 
 ##資料分析2:出/入境區域分布圖
-```{r}
+```{r }
 #整理從那些國家入境、入境的次數，並轉成資料框
 arrive_num<-table(arrive$destination)%>%as.data.frame()
 colnames(arrive_num)=c("region","num")
@@ -138,6 +144,11 @@ arrive_num$region<-as.character(arrive_num$region)
 depart_num$region<-as.character(depart_num$region)
 arrive_geo<-geocode(arrive_num$region)
 depart_geo<-geocode(depart_num$region)
+
+knitr::kable(arrive_num)
+knitr::kable(depart_num)
+knitr::kable(arrive_geo)
+knitr::kable(depart_geo)
 
 #用borders建立一個世界地圖的環境
 world_map<-borders("world", colour="gray50", fill="gray", size=1)
@@ -158,9 +169,27 @@ arrive_world
 depart_world
 
 ```
+##資料分析3:台灣到日本旅遊的人數變化
 
-##資料分析3:日本旅遊人數曲線圖
-```{r}
+```{r }
+tojapan<-data.frame(year=c(2002:2016),num=0)
+for(i in 1:15){
+  tojapan[i,2]=`aborad(taiwan2016).xls`[4,i+2] 
+}
+#建立一個資料表，將到日本旅遊的人數資料逐年讀入
+
+tojapan$num<-as.numeric(tojapan$num)
+#將人數資料轉為數值
+
+knitr::kable(tojapan)
+
+plot(tojapan$year, tojapan$num/10000, type="l",xlim=c(2002,2016),col="blue",main="台灣到日本旅遊人數變化",xlab="年份",ylab="人數(萬人)")
+#以年分為X軸、人數為Y軸做折線圖分析
+ 
+```
+
+##資料分析4:日本旅遊人數曲線圖
+```{r }
 people_counting<-data.frame(year=c(2000,2001,2002,2003,
                         2004,2005,2006,2007,
                         2008,2009,2010,2011,
@@ -181,15 +210,15 @@ people_counting<-data.frame(year=c(2000,2001,2002,2003,
                        as.numeric(`2014總表.xls`[11,3]),
                        as.numeric(`2015總表.xls`[11,3])))
 
-View(people_counting)
+knitr::kable(people_counting)
 #建立一個只有年分、人數的資料表
 
 plot(people_counting$year, people_counting$num/10000, type="l",xlim=c(2000,2015),col="blue",main="每年人數變化",xlab="年份",ylab="人數(萬人)")
 #以年分為X軸、人數為Y軸做折線圖分析
 ```
 
-##資料分析4:到仙台旅遊的人數變化
-```{r}
+##資料分析5:到仙台旅遊的人數變化
+```{r }
 sendai_passengers<-data.frame(year=c(2000,2001,2002,2003,
                                     2004,2005,2006,2007,
                                     2008,2009,2010,2011,
@@ -210,14 +239,17 @@ sendai_passengers<-data.frame(year=c(2000,2001,2002,2003,
                                    as.numeric(`2013國內定期航空(旅客流動).xls`[nrow(`2013國內定期航空(旅客流動).xls`),22]),
                                    as.numeric(`2014國內定期航空(旅客流動).xls`[nrow(`2014國內定期航空(旅客流動).xls`),22]),
                                    as.numeric(`2015國內定期航空(旅客流動).xls`[nrow(`2015國內定期航空(旅客流動).xls`),22])))
-View(sendai_passengers)
+
+knitr::kable(sendai_passengers)
+
 #建立一個只有年分、人數的資料表
 
-plot(sendai_passengers$year, sendai_passengers$num/10000, type = "l",xlim=c(2000,2015),col="blue",main="每年人數變化",xlab="年份",ylab="人數(萬人)")
+plot(sendai_passengers$year, sendai_passengers$num/10000, type = "l",xlim=c(2000,2015),col="blue",main="到仙台旅遊人數變化",xlab="年份",ylab="人數(萬人)")
 #以年分為X軸、人數為Y軸做折線圖分析
 ```
-##資料分析5:到福島旅遊的人數變化
-```{r}
+
+##資料分析6:到福島旅遊的人數變化
+```{r }
 fukushima_passengers<-data.frame(year=c(2000,2001,2002,2003,
                                     2004,2005,2006,2007,
                                     2008,2009,2010,2011,
@@ -238,18 +270,14 @@ num=c(as.numeric(`2000國內定期航空(旅客流動).xls`[nrow(`2000國內定�
                                    as.numeric(`2013國內定期航空(旅客流動).xls`[nrow(`2013國內定期航空(旅客流動).xls`),27]),
                                    as.numeric(`2014國內定期航空(旅客流動).xls`[nrow(`2014國內定期航空(旅客流動).xls`),27]),
                                    as.numeric(`2015國內定期航空(旅客流動).xls`[nrow(`2015國內定期航空(旅客流動).xls`),27])))
-View(fukushima_passengers)
+
+knitr::kable(fukushima_passengers)
 #建立一個只有年分、人數的資料表
 
-plot(fukushima_passengers$year, fukushima_passengers$num/10000, type = "l",xlim=c(2000,2015),col="blue",main="每年人數變化",xlab="年份",ylab="人數(萬人)")
+plot(fukushima_passengers$year, fukushima_passengers$num/10000, type = "l",xlim=c(2000,2015),col="blue",main="到福島旅遊人數變化",xlab="年份",ylab="人數(萬人)")
 #以年分為X軸、人數為Y軸做折線圖分析
 ```
 
-#資料分析5:
-
-```{r}
-
-```
 
 =================================================================
 
@@ -258,12 +286,13 @@ plot(fukushima_passengers$year, fukushima_passengers$num/10000, type = "l",xlim=
 >
 2.桃園機場往來各國的分布:  
 >
-3.日本旅遊人數近15年來的變化:  
+3.台灣到日本旅遊的人數變化:  
 >
-4.日本仙台、福島地區近15年來旅遊人數的變化:  
+4.日本國內旅遊人數近15年來的變化:  
 >
-5.
+5.日本仙台、福島地區國內近15年來旅遊人數的變化:  
 >
+
 
 =================================================================
 
