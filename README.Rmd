@@ -1,0 +1,291 @@
+---
+title: "台灣桃園機場出入境狀況與日本機場受災前後旅遊人數之變化"
+author: "B0344218葉建夆 B0344117沈庭安"
+date: "2017年6月9日"
+output: html_document
+---
+
+=================================================================
+一、資料介紹、來源及格式
+
+1.桃園國際機場即時航班(6/5-6/7):
+  桃園國際機場每天更新，當天及其前後兩天之航班狀況，當中包含往來地點、時間等資料。
+>X0605_0607
+>CSV檔案
+>http://data.gov.tw/node/26194
+
+2.日本~~~~~~:
+>
+>
+>
+>http://www.data.go.jp/
+=================================================================
+
+二、分析議題
+1.桃園機場各航空公司之航班的延誤比例
+2.桃園機場往來地點的分布圖
+3.日本近15年(2000-2015)來旅遊人數的變化
+4.日本仙台地區近15年(2000-2015)來旅遊人數的變化
+5.日本福島地區近15年(2000-2015)來旅遊人數的變化
+6.
+
+=================================================================
+
+##假設
+
+=================================================================
+
+
+三、分析過程
+
+##載入需要用到的packages
+```{r}
+library(readr)
+library(readxl)
+library(magrittr)
+library(ggmap)
+library(ggplot2)
+```
+
+##載入資料
+```{r}
+X0605_0607 <- read_csv("C:/Users/pig98/Desktop/B0688335/0605_0607.csv", 
+                       col_names = FALSE)
+#桃園機場的CSV檔單獨讀入
+
+temp = list.files(pattern="*.xls")
+for (i in 1:length(temp)) 
+  assign(temp[i], read_excel(temp[i]))
+#其餘資料用迴圈讀入
+```
+
+##資料清洗
+```{r}
+#去除不需要的欄位以及中文名稱
+X0605_0607<-X0605_0607[,c(-4,-11,-13,-14,-17,-18)] 
+#新增欄位名稱
+colnames(X0605_0607)=c("terminals","species","airline_id","flight","gate",
+                       "scheduled_date","scheduled_time","expected_date","expected_time",
+                       "destination","model","other destination","baggage claim","counter")
+#依照航空公司代碼簡單排序資料
+X0605_0607<-X0605_0607[order(X0605_0607$airline_id),]
+
+X0605_0607
+```
+
+
+##資料分析1:哪些航空公司的班機最容易誤點/最準時
+```{r}
+#新增一個欄位判斷班機是否delay
+for(n in 1:nrow(X0605_0607) )
+{
+  if(X0605_0607[n,6]==X0605_0607[n,8]){
+    if(X0605_0607[n,7]<X0605_0607[n,9]){
+      X0605_0607$delay[n]="T"
+    }else
+      X0605_0607$delay[n]="F"
+  }
+  else if(X0605_0607[n,6]<X0605_0607[n,8])
+    X0605_0607$delay[n]="T"
+  else if(X0605_0607[n,6]>X0605_0607[n,8])
+    X0605_0607$delay[n]="F"
+}
+View(X0605_0607)
+
+#將資料分成出境跟入境兩個子集
+arrive<-subset(X0605_0607,species=="A");
+depart<-subset(X0605_0607,species=="D");
+
+#用table統計出各航空公司的有/無delay次數,並轉為dataframe
+arrive_delay<-table(airline=arrive$airline_id,delay=arrive$delay)%>%as.data.frame.matrix()
+depart_delay<-table(airline=depart$airline_id,delay=depart$delay)%>%as.data.frame.matrix()
+
+#整理出各航空公司的航班數
+flight_num<-table(airline=X0605_0607$airline_id,species=X0605_0607$species)%>%as.data.frame.matrix()
+flight_num<-flight_num[order(flight_num$A+flight_num$D,decreasing = T),]
+#檢視各航空公司的航班數
+View(flight_num)
+
+#計算出各航空公司的delay比例
+arrive_delay$ratio<-arrive_delay$T/(arrive_delay$T+arrive_delay$F)
+depart_delay$ratio<-depart_delay$T/(depart_delay$T+depart_delay$F)
+View(arrive_delay)
+View(depart_delay)
+
+#入境最不準時的六大航空公司:捷星太平洋、遠東航空、四川、全亞洲、德威、濟州
+head(arrive_delay[order(arrive_delay$ratio,decreasing = T),])
+#入境最準時的六大航空公司:景成、酷航、聯合、歐洲、酷島、易斯達
+tail(arrive_delay[order(arrive_delay$ratio,decreasing = T),])
+#出境最不準時的六大航空公司:義大利、捷星太平洋、吉祥、濟州、遠東、捷星日本
+head(depart_delay[order(depart_delay$ratio,decreasing = T),])
+#出境最準時的六大航空公司:加拿大、法國、馬亞洲、阿聯酋、景成、德威
+tail(depart_delay[order(depart_delay$ratio,decreasing = T),])
+```
+
+##資料分析2:出/入境區域分布圖
+```{r}
+#整理從那些國家入境、入境的次數，並轉成資料框
+arrive_num<-table(arrive$destination)%>%as.data.frame()
+colnames(arrive_num)=c("region","num")
+
+#整理出境去那些國家、出境的次數，並轉成資料框
+depart_num<-table(arrive$destination)%>%as.data.frame()
+colnames(depart_num)=c("region","num")
+
+#我們需要各個國家的經緯度，先將原本的factor轉成character，再用geocode()取得經緯度
+arrive_num$region<-as.character(arrive_num$region)
+depart_num$region<-as.character(depart_num$region)
+arrive_geo<-geocode(arrive_num$region)
+depart_geo<-geocode(depart_num$region)
+
+#用borders建立一個世界地圖的環境
+world_map<-borders("world", colour="gray50", fill="gray", size=1)
+
+#利用疊圖的方式，將world_map，和geom_point()利用剛剛的經緯度產生的點疊再一起，並利用顏色來區分個數
+arrive_world=ggplot()+
+            world_map+
+            geom_point(aes(x=arrive_geo$lon, y=arrive_geo$lat,color=arrive_num$num))+ 
+            scale_color_continuous(low = "yellow",high = "red")+ 
+            guides(size=FALSE)
+
+depart_world=ggplot()+world_map+geom_point(aes(x=depart_geo$lon, y=depart_geo$lat,color=depart_num$num))+ 
+  scale_color_continuous(low = "sky blue",high = "dark blue")+ 
+  guides(size=FALSE)
+
+#檢視出境/入境的分布圖
+arrive_world
+depart_world
+
+```
+
+##資料分析3:日本旅遊人數曲線圖
+```{r}
+people_counting<-data.frame(year=c(2000,2001,2002,2003,
+                        2004,2005,2006,2007,
+                        2008,2009,2010,2011,
+                        2012,2014,2015),
+                 num=c(as.numeric(`2000總表.xls`[7,3]),
+                       as.numeric(`2001總表.xls`[7,3]),
+                       as.numeric(`2002總表.xls`[11,3]),
+                       as.numeric(`2003總表.xls`[11,3]),
+                       as.numeric(`2004總表.xls`[11,3]),
+                       as.numeric(`2005總表.xls`[11,3]),
+                       as.numeric(`2006總表.xls`[11,3]),
+                       as.numeric(`2007總表.xls`[11,3]),
+                       as.numeric(`2008總表.xls`[11,3]),
+                       as.numeric(`2009總表.xls`[11,3]),
+                       as.numeric(`2010總表.xls`[11,3]),
+                       as.numeric(`2011總表.xls`[11,3]),
+                       as.numeric(`2012總表.xls`[11,3]),
+                       as.numeric(`2014總表.xls`[11,3]),
+                       as.numeric(`2015總表.xls`[11,3])))
+
+View(people_counting)
+#建立一個只有年分、人數的資料表
+
+plot(people_counting$year, people_counting$num/10000, type="l",xlim=c(2000,2015),col="blue",main="每年人數變化",xlab="年份",ylab="人數(萬人)")
+#以年分為X軸、人數為Y軸做折線圖分析
+```
+
+##資料分析4:到仙台旅遊的人數變化
+```{r}
+sendai_passengers<-data.frame(year=c(2000,2001,2002,2003,
+                                    2004,2005,2006,2007,
+                                    2008,2009,2010,2011,
+                                    2012,2013,2014,2015),
+                             num=c(as.numeric(`2000國內定期航空(旅客流動).xls`[nrow(`2000國內定期航空(旅客流動).xls`),20]),
+                                   as.numeric(`2001國內定期航空(旅客流動).xls`[nrow(`2001國內定期航空(旅客流動).xls`),20]),
+                                   as.numeric(`2002國內定期航空(旅客流動).xls`[nrow(`2002國內定期航空(旅客流動).xls`),20]),
+                                   as.numeric(`2003國內定期航空(旅客流動).xls`[nrow(`2003國內定期航空(旅客流動).xls`),20]),
+                                   as.numeric(`2004國內定期航空(旅客流動).xls`[nrow(`2004國內定期航空(旅客流動).xls`),20]),
+                                   as.numeric(`2005國內定期航空(旅客流動).xls`[nrow(`2005國內定期航空(旅客流動).xls`),20]),
+                                   as.numeric(`2006國內定期航空(旅客流動).xls`[nrow(`2006國內定期航空(旅客流動).xls`),20]),
+                                   as.numeric(`2007國內定期航空(旅客流動).xls`[nrow(`2007國內定期航空(旅客流動).xls`),22]),
+                                   as.numeric(`2008國內定期航空(旅客流動).xls`[nrow(`2008國內定期航空(旅客流動).xls`),22]),
+                                   as.numeric(`2009國內定期航空(旅客流動).xls`[nrow(`2009國內定期航空(旅客流動).xls`),22]),
+                                   as.numeric(`2010國內定期航空(旅客流動).xls`[nrow(`2010國內定期航空(旅客流動).xls`),22]),
+                                   as.numeric(`2011國內定期航空(旅客流動).xls`[nrow(`2011國內定期航空(旅客流動).xls`),22]),
+                                   as.numeric(`2012國內定期航空(旅客流動).xls`[nrow(`2012國內定期航空(旅客流動).xls`),22]),
+                                   as.numeric(`2013國內定期航空(旅客流動).xls`[nrow(`2013國內定期航空(旅客流動).xls`),22]),
+                                   as.numeric(`2014國內定期航空(旅客流動).xls`[nrow(`2014國內定期航空(旅客流動).xls`),22]),
+                                   as.numeric(`2015國內定期航空(旅客流動).xls`[nrow(`2015國內定期航空(旅客流動).xls`),22])))
+View(sendai_passengers)
+#建立一個只有年分、人數的資料表
+
+plot(sendai_passengers$year, sendai_passengers$num/10000, type = "l",xlim=c(2000,2015),col="blue",main="每年人數變化",xlab="年份",ylab="人數(萬人)")
+#以年分為X軸、人數為Y軸做折線圖分析
+```
+##資料分析5:到福島旅遊的人數變化
+```{r}
+fukushima_passengers<-data.frame(year=c(2000,2001,2002,2003,
+                                    2004,2005,2006,2007,
+                                    2008,2009,2010,2011,
+                                    2012,2013,2014,2015),
+num=c(as.numeric(`2000國內定期航空(旅客流動).xls`[nrow(`2000國內定期航空(旅客流動).xls`),25]),
+                                   as.numeric(`2001國內定期航空(旅客流動).xls`[nrow(`2001國內定期航空(旅客流動).xls`),25]),
+                                   as.numeric(`2002國內定期航空(旅客流動).xls`[nrow(`2002國內定期航空(旅客流動).xls`),25]),
+                                   as.numeric(`2003國內定期航空(旅客流動).xls`[nrow(`2003國內定期航空(旅客流動).xls`),25]),
+                                   as.numeric(`2004國內定期航空(旅客流動).xls`[nrow(`2004國內定期航空(旅客流動).xls`),25]),
+                                   as.numeric(`2005國內定期航空(旅客流動).xls`[nrow(`2005國內定期航空(旅客流動).xls`),25]),
+                                   as.numeric(`2006國內定期航空(旅客流動).xls`[nrow(`2006國內定期航空(旅客流動).xls`),25]),
+                                   as.numeric(`2007國內定期航空(旅客流動).xls`[nrow(`2007國內定期航空(旅客流動).xls`),27]),
+                                   as.numeric(`2008國內定期航空(旅客流動).xls`[nrow(`2008國內定期航空(旅客流動).xls`),27]),
+                                   as.numeric(`2009國內定期航空(旅客流動).xls`[nrow(`2009國內定期航空(旅客流動).xls`),27]),
+                                   as.numeric(`2010國內定期航空(旅客流動).xls`[nrow(`2010國內定期航空(旅客流動).xls`),27]),
+                                   as.numeric(`2011國內定期航空(旅客流動).xls`[nrow(`2011國內定期航空(旅客流動).xls`),27]),
+                                   as.numeric(`2012國內定期航空(旅客流動).xls`[nrow(`2012國內定期航空(旅客流動).xls`),27]),
+                                   as.numeric(`2013國內定期航空(旅客流動).xls`[nrow(`2013國內定期航空(旅客流動).xls`),27]),
+                                   as.numeric(`2014國內定期航空(旅客流動).xls`[nrow(`2014國內定期航空(旅客流動).xls`),27]),
+                                   as.numeric(`2015國內定期航空(旅客流動).xls`[nrow(`2015國內定期航空(旅客流動).xls`),27])))
+View(fukushima_passengers)
+#建立一個只有年分、人數的資料表
+
+plot(fukushima_passengers$year, fukushima_passengers$num/10000, type = "l",xlim=c(2000,2015),col="blue",main="每年人數變化",xlab="年份",ylab="人數(萬人)")
+#以年分為X軸、人數為Y軸做折線圖分析
+```
+
+#資料分析5:
+
+```{r}
+
+```
+
+=================================================================
+
+五、分析結果  
+1.桃園機場各航空公司的誤點狀況:  
+>
+2.桃園機場往來各國的分布:  
+>
+3.日本旅遊人數近15年來的變化:  
+>
+4.日本仙台、福島地區近15年來旅遊人數的變化:  
+>
+5.  
+>
+
+=================================================================
+
+六、分析結果可能解決的問題  
+
+
+
+
+
+
+=================================================================
+
+七、組員名單及分工  
+B0344218葉建夆
+>
+>
+>
+>
+
+B0344117沈庭安  
+>
+>
+>
+>
+
+=================================================================
