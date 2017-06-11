@@ -29,7 +29,7 @@ output: html_document
 
 二、分析議題  
 1.桃園機場各航空公司之航班的延誤比例  
-2.桃園機場往來地點的分布圖  
+2.台灣到各國旅遊的分布圖 
 3.台灣到日本近年來旅遊人數的變化
 4.日本近15年(2000-2015)來國內航班的變化  
 5.日本仙台地區近15年(2000-2015)來國內航班的變化  
@@ -129,45 +129,41 @@ head(depart_delay[order(depart_delay$ratio,decreasing = T),])
 tail(depart_delay[order(depart_delay$ratio,decreasing = T),])
 ```
 
-##資料分析2:出/入境區域分布圖
+##資料分析2:台灣到各國旅遊的分布圖
 ```{r }
-#整理從那些國家入境、入境的次數，並轉成資料框
-arrive_num<-table(arrive$destination)%>%as.data.frame()
-colnames(arrive_num)=c("region","num")
+#將2016年到各國旅遊的人數取出來單獨做一個資料表
+travel<-cbind(`aborad(taiwan2016).xls`[-1,2],`aborad(taiwan2016).xls`[-1,17])
 
-#整理出境去那些國家、出境的次數，並轉成資料框
-depart_num<-table(arrive$destination)%>%as.data.frame()
-colnames(depart_num)=c("region","num")
+#欄位命名並刪除不需要的資料
+colnames(travel)=c("region","num")
+travel<-travel[-c(15,16,19,20,28,29,33,34,36,37,38,39,40),]
 
-#我們需要各個國家的經緯度，先將原本的factor轉成character，再用geocode()取得經緯度
-arrive_num$region<-as.character(arrive_num$region)
-depart_num$region<-as.character(depart_num$region)
-arrive_geo<-geocode(arrive_num$region)
-depart_geo<-geocode(depart_num$region)
+#將名稱全部轉為只剩英文，以方便轉換經緯度，並將不適合地圖的名稱做更正
+travel$region<-gsub("[^A-Za-z]",replacement=" ",travel$region)
+travel[4,1]<-"Korea"
+travel[2,1]<-"China"
 
-knitr::kable(arrive_num)
-knitr::kable(depart_num)
-knitr::kable(arrive_geo)
-knitr::kable(depart_geo)
+#將人數轉為數值
+travel$num<-as.numeric(travel$num)
+
+#建立一個經緯度表格
+travel_geo<-geocode(travel$region)
 
 #用borders建立一個世界地圖的環境
 world_map<-borders("world", colour="gray50", fill="gray", size=1)
 
+knitr::kable(travel)
+knitr::kable(travel_geo)
+
 #利用疊圖的方式，將world_map，和geom_point()利用剛剛的經緯度產生的點疊再一起，並利用顏色來區分個數
-arrive_world=ggplot()+
+travel_world=ggplot()+
             world_map+
-            geom_point(aes(x=arrive_geo$lon, y=arrive_geo$lat,color=arrive_num$num))+ 
-            scale_color_continuous(low = "yellow",high = "red")+ 
+            geom_point(aes(x=travel_geo$lon, y=travel_geo$lat,color=travel$num))+ 
+            scale_color_continuous(low = "blue",high = "red")+ 
             guides(size=FALSE)
 
-depart_world=ggplot()+world_map+geom_point(aes(x=depart_geo$lon, y=depart_geo$lat,color=depart_num$num))+ 
-  scale_color_continuous(low = "sky blue",high = "dark blue")+ 
-  guides(size=FALSE)
 
-#檢視出境/入境的分布圖
-arrive_world
-depart_world
-
+travel_world
 ```
 ##資料分析3:台灣到日本旅遊的人數變化
 
@@ -284,7 +280,7 @@ plot(fukushima_passengers$year, fukushima_passengers$num/10000, type = "l",xlim=
 五、分析結果  
 1.桃園機場各航空公司的誤點狀況:  
 >
-2.桃園機場往來各國的分布:  
+2.台灣到各國旅遊的分布圖:  
 >
 3.台灣到日本旅遊的人數變化:  
 >

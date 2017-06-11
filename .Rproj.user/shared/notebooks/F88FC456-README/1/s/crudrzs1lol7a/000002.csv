@@ -1,4 +1,7 @@
 "0","library(readr)"
+"2","There were 50 or more warnings (use warnings() to see the first 50)"
+"2","
+"
 "0","library(readxl)"
 "0","library(magrittr)"
 "0","library(ggmap)"
