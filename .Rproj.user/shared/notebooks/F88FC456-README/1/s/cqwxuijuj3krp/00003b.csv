@@ -1,26 +1,5 @@
-"0","rm(depart,depart_geo,depart_num,depart_world)
+"0","travel_world
 "
-"2","Warning messages:
-"
-"2","1: Unknown column 'delay' 
-"
-"2","2: Unknown column 'delay' 
-"
-"2","3: Unknown column 'delay' 
-"
-"2","4: Unknown column 'delay' 
-"
-"2","5: Unknown column 'delay' 
-"
-"2","6: Unknown column 'delay' 
-"
-"2","7: Unknown column 'delay' 
-"
-"2","8: Unknown column 'delay' 
-"
-"2","9: "
-"2","In strsplit(code, ""\n"", fixed = TRUE) :"
+"2","There were 50 or more warnings (use warnings() to see the first 50)"
 "2","
- "
-"2"," input string 1 is invalid in this locale
 "
