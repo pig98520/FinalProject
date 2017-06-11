@@ -31,9 +31,8 @@ output: html_document
 1.桃園機場各航空公司之航班的延誤比例  
 2.台灣到各國旅遊的分布圖 
 3.台灣到日本近年來旅遊人數的變化
-4.日本近15年(2000-2015)來國內航班的變化  
-5.日本仙台地區近15年(2000-2015)來國內航班的變化  
-6.日本福島地區近15年(2000-2015)來國內航班的變化  
+4.日本仙台地區近15年(2000-2015)來國內航班的變化  
+5.日本福島地區近15年(2000-2015)來國內航班的變化  
   
 
 =================================================================
@@ -184,36 +183,7 @@ plot(tojapan$year, tojapan$num/10000, type="l",xlim=c(2002,2016),col="blue",main
  
 ```
 
-##資料分析4:日本旅遊人數曲線圖
-```{r }
-people_counting<-data.frame(year=c(2000,2001,2002,2003,
-                        2004,2005,2006,2007,
-                        2008,2009,2010,2011,
-                        2012,2014,2015),
-                 num=c(as.numeric(`2000總表.xls`[7,3]),
-                       as.numeric(`2001總表.xls`[7,3]),
-                       as.numeric(`2002總表.xls`[11,3]),
-                       as.numeric(`2003總表.xls`[11,3]),
-                       as.numeric(`2004總表.xls`[11,3]),
-                       as.numeric(`2005總表.xls`[11,3]),
-                       as.numeric(`2006總表.xls`[11,3]),
-                       as.numeric(`2007總表.xls`[11,3]),
-                       as.numeric(`2008總表.xls`[11,3]),
-                       as.numeric(`2009總表.xls`[11,3]),
-                       as.numeric(`2010總表.xls`[11,3]),
-                       as.numeric(`2011總表.xls`[11,3]),
-                       as.numeric(`2012總表.xls`[11,3]),
-                       as.numeric(`2014總表.xls`[11,3]),
-                       as.numeric(`2015總表.xls`[11,3])))
-
-knitr::kable(people_counting)
-#建立一個只有年分、人數的資料表
-
-plot(people_counting$year, people_counting$num/10000, type="l",xlim=c(2000,2015),col="blue",main="每年人數變化",xlab="年份",ylab="人數(萬人)")
-#以年分為X軸、人數為Y軸做折線圖分析
-```
-
-##資料分析5:到仙台旅遊的人數變化
+##資料分析4:到仙台旅遊的人數變化
 ```{r }
 sendai_passengers<-data.frame(year=c(2000,2001,2002,2003,
                                     2004,2005,2006,2007,
@@ -244,7 +214,7 @@ plot(sendai_passengers$year, sendai_passengers$num/10000, type = "l",xlim=c(2000
 #以年分為X軸、人數為Y軸做折線圖分析
 ```
 
-##資料分析6:到福島旅遊的人數變化
+##資料分析5:到福島旅遊的人數變化
 ```{r }
 fukushima_passengers<-data.frame(year=c(2000,2001,2002,2003,
                                     2004,2005,2006,2007,
@@ -284,9 +254,7 @@ plot(fukushima_passengers$year, fukushima_passengers$num/10000, type = "l",xlim=
 >
 3.台灣到日本旅遊的人數變化:  
 >
-4.日本國內旅遊人數近15年來的變化:  
->
-5.日本仙台、福島地區國內近15年來旅遊人數的變化:  
+4.日本仙台、福島地區國內近15年來旅遊人數的變化:  
 >
 
 
