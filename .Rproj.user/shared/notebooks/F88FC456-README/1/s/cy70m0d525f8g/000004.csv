@@ -1,2 +1,0 @@
-"0","#入境最準時的六大航空公司:景成、酷航、聯合、歐洲、酷島、易斯達"
-"0","tail(arrive_delay[order(arrive_delay$ratio,decreasing = T),])"
